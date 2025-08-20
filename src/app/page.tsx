@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,86 +7,140 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Github, Linkedin, Mail, ArrowRight, ExternalLink, Code2, Rocket, Briefcase, Download, Globe, Sparkles, Phone } from "lucide-react";
+import { Mail, MessageSquare, Sparkles, Quote, MapPin, Briefcase } from "lucide-react";
 
-// ---------------------------------------------
-// CONFIG — edit this data to personalize quickly
-// ---------------------------------------------
+// ------------------------------------------------------------------
+// Portfolio: Rajni Sachdeva — Next.js + Tailwind + shadcn/ui (App Router)
+// Paste this file into: src/app/page.tsx
+// Make sure you've installed shadcn/ui components:
+//   npx shadcn@latest add button card badge input textarea separator
+// Also: npm i framer-motion lucide-react
+// ------------------------------------------------------------------
+
+// Theme helper — subtle day→night landscape stripes inspired by the reference image
+const ThemeBanner: React.FC = () => (
+  <div className="w-full">
+    <div
+      className="h-40 md:h-56 w-full rounded-b-3xl border-b border-neutral-200 dark:border-neutral-800"
+      style={{
+        background:
+          "linear-gradient(180deg,#fde68a 0%,#fde68a 22%,#a7f3d0 22%,#a7f3d0 44%,#93c5fd 44%,#93c5fd 66%,#c4b5fd 66%,#c4b5fd 88%,#60a5fa 88%,#60a5fa 100%)",
+      }}
+    />
+  </div>
+);
+
+const fade = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+// -------------------------
+// DATA
+// -------------------------
 const INFO = {
-  name: "Your Name",
-  role: "Engineer • Builder • Learner",
-  location: "Phoenix, AZ",
-  email: "you@example.com",
-  phone: "+1 (555) 123-4567",
-  resumeUrl: "/resume.pdf", // place your file in public/ or use a URL
-  socials: {
-    github: "https://github.com/username",
-    linkedin: "https://www.linkedin.com/in/username/",
-  },
+  name: "Rajni Sachdeva",
+  title: "Global Connector, Development Strategist, and Partnership Builder",
+  tagline:
+    "International development leader building bridges between governments, businesses, and communities through sustainable partnerships. Driven by the vision of borderless shared prosperity for all.",
+  location: "Auckland • Global",
+  email: "rajnisachdeva@rediffmail.com",
 };
 
 const PROJECTS = [
   {
-    title: "PawPal — Smart Collar Companion",
-    blurb:
-      "IoT + mobile dashboard for real‑time pet health, GPS, and activity tracking.",
-    tags: ["IoT", "Next.js", "FastAPI", "Postgres"],
-    link: "https://example.com/pawpal",
-    repo: "https://github.com/username/pawpal",
+    title: "COP Buddy — Intergenerational Community Program",
+    summary:
+      "Community-led programme strengthening support systems for vulnerable communities — senior citizens and young adults in juvenile correction centres. Restorative, communication-first model that rebuilds compassion between generations. Pilot completed in Auckland with strong success; replicable and scalable.",
+    tags: ["Sustainable Development", "Community", "Intergenerational"],
   },
   {
-    title: "Solar Cell Optimizer",
-    blurb:
-      "Interactive simulations to explore TOPCon vs Al‑BSF trade‑offs and visualize IV/QE curves.",
-    tags: ["Python", "Streamlit", "Pandas"],
-    link: "https://example.com/solar",
-    repo: "https://github.com/username/solar-optimizer",
+    title: "Apple Production Improvement — Himachal Pradesh (India)",
+    summary:
+      "Facilitated G2G partnership with World Bank & ADB support to share best practices, improving yield and livelihoods while creating jobs. Replicable model extendable to other agricultural interventions; scalable across regions.",
+    tags: ["Agriculture", "G2G Partnership", "Livelihoods"],
   },
   {
-    title: "Secure Notes",
-    blurb:
-      "End‑to‑end encrypted notes with zero‑knowledge auth and offline sync.",
-    tags: ["Rust", "Tauri", "React"],
-    link: "https://example.com/secure-notes",
-    repo: "https://github.com/username/secure-notes",
+    title: "Cross‑Sector Feasibility Studies",
+    summary:
+      "Completed studies across Education, Agriculture, Urban Planning, Smart Cities, and Climate Change that already drive sustainable development and growth for institutions and corporates across borders.",
+    tags: ["Education", "Urban Planning", "Smart Cities", "Climate"],
   },
-];
-
-const EXPERIENCE = [
-  {
-    company: "Oak Ridge National Laboratory (PCIP)",
-    role: "Research Intern — Bioinformatics & AI/ML",
-    period: "Jun 2024 – Aug 2024",
-    points: [
-      "Prototyped retrieval pipelines and docs IA for ESGF datasets.",
-      "Accelerated data wrangling by 35% using vectorized routines.",
-      "Shipped reproducible, containerized notebooks for HPC." ,
-    ],
-  },
-  {
-    company: "ASU — Capstone",
-    role: "Gesture‑Controlled Laparoscopic Camera (Team)",
-    period: "Jan 2025 – May 2025",
-    points: [
-      "Built embedded motor control & vision‑guided pointing.",
-      "Led systems integration, testing, and documentation.",
-    ],
-  },
-];
-
-const SKILLS = [
-  "Python", "C/C++", "Rust", "SwiftUI", "React/Next.js", "FastAPI", "Postgres",
-  "Docker", "Kubernetes", "AWS", "HPC", "FPGA Basics", "Signal Processing",
 ];
 
 // -------------------------
-// UI helpers
+// REVIEWS (client‑side only; persisted in localStorage)
 // -------------------------
-const fade = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0 },
+interface Review { name: string; message: string; date: string }
+
+const ReviewsBlock: React.FC = () => {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("rs_reviews") : null;
+    if (saved) setReviews(JSON.parse(saved));
+  }, []);
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const name = (data.get("name") as string)?.trim() || "Anonymous";
+    const message = (data.get("message") as string)?.trim();
+    if (!message) return;
+    setSubmitting(true);
+    const entry: Review = { name, message, date: new Date().toISOString() };
+    const next = [entry, ...reviews].slice(0, 200);
+    setReviews(next);
+    if (typeof window !== "undefined") localStorage.setItem("rs_reviews", JSON.stringify(next));
+    (e.currentTarget as HTMLFormElement).reset();
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5"/>Leave a Comment / Review</CardTitle>
+          <CardDescription>Your thoughts help shape better partnerships and programs.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="grid gap-3">
+            <Input name="name" placeholder="Your name (optional)" className="rounded-xl"/>
+            <Textarea name="message" placeholder="Your message" rows={5} required className="rounded-xl"/>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={submitting} className="rounded-2xl">{submitting ? "Sending…" : "Post"}</Button>
+            </div>
+          </form>
+          <p className="text-xs text-neutral-500 mt-3">Stored locally in your browser. For public collection, connect a backend (e.g., Supabase, Firebase, or an email webhook).</p>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Quote className="w-5 h-5"/>Recent Comments</CardTitle>
+          <CardDescription>Newest first</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {reviews.length === 0 ? (
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">No comments yet. Be the first to share your thoughts.</p>
+          ) : (
+            reviews.map((r, i) => (
+              <div key={i} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between text-xs text-neutral-500">
+                  <span>{r.name || "Anonymous"}</span>
+                  <span>{new Date(r.date).toLocaleString()}</span>
+                </div>
+                <p className="mt-2 text-sm whitespace-pre-wrap">{r.message}</p>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
 
+// -------------------------
+// SECTIONS
+// -------------------------
 const Section: React.FC<{ id: string; title: string; icon?: React.ReactNode; children: React.ReactNode }>=({ id, title, icon, children })=>{
   return (
     <section id={id} className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16">
@@ -101,9 +155,6 @@ const Section: React.FC<{ id: string; title: string; icon?: React.ReactNode; chi
   );
 };
 
-// -------------------------
-// NAVBAR
-// -------------------------
 const Navbar: React.FC = () => (
   <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 dark:bg-neutral-900/70 border-b border-neutral-200 dark:border-neutral-800">
     <nav className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
@@ -111,106 +162,117 @@ const Navbar: React.FC = () => (
         <Sparkles className="w-5 h-5" /> <span>{INFO.name}</span>
       </a>
       <div className="hidden md:flex items-center gap-6 text-sm">
+        <a href="#about" className="hover:underline">About</a>
+        <a href="#professional" className="hover:underline">Professional Development</a>
+        <a href="#reflections" className="hover:underline">Reflections</a>
         <a href="#projects" className="hover:underline">Projects</a>
-        <a href="#experience" className="hover:underline">Experience</a>
-        <a href="#skills" className="hover:underline">Skills</a>
         <a href="#contact" className="hover:underline">Contact</a>
-        <Button asChild className="rounded-2xl">
-          <a href={INFO.resumeUrl} target="_blank" rel="noreferrer">
-            <Download className="w-4 h-4 mr-2" /> Resume
-          </a>
-        </Button>
-      </div>
-      <div className="md:hidden">
-        <a href="#contact" className="inline-flex items-center gap-2 text-sm font-medium">
-          <Mail className="w-4 h-4"/> Contact
-        </a>
       </div>
     </nav>
   </header>
 );
 
-// -------------------------
-// HERO
-// -------------------------
 const Hero: React.FC = () => (
-  <section id="home" className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pt-16 pb-8">
-    <motion.div initial="hidden" animate="show" variants={fade} className="grid md:grid-cols-2 gap-8 items-center">
-      <div>
-        <h1 className="text-4xl md:text-5xl font-bold leading-tight tracking-tight">
-          {INFO.name}
-        </h1>
-        <p className="mt-3 text-xl text-neutral-600 dark:text-neutral-300">{INFO.role}</p>
-        <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-          I build reliable, human‑centered software and systems — from fast frontends to
-          robust backends and data pipelines. Curious by default, practical by design.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button asChild className="rounded-2xl">
-            <a href="#projects"><Rocket className="w-4 h-4 mr-2"/> See projects</a>
-          </Button>
-          <Button variant="outline" asChild className="rounded-2xl">
-            <a href={INFO.socials.github} target="_blank" rel="noreferrer"><Github className="w-4 h-4 mr-2"/> GitHub</a>
-          </Button>
-          <Button variant="outline" asChild className="rounded-2xl">
-            <a href={INFO.socials.linkedin} target="_blank" rel="noreferrer"><Linkedin className="w-4 h-4 mr-2"/> LinkedIn</a>
-          </Button>
+  <section id="home" className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <ThemeBanner />
+    <div className="py-10 md:py-12">
+      <motion.div initial="hidden" animate="show" variants={fade}>
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight tracking-tight">{INFO.name}</h1>
+        <p className="mt-2 text-lg text-neutral-700 dark:text-neutral-300">{INFO.title}</p>
+        <p className="mt-4 text-neutral-700 dark:text-neutral-300">{INFO.tagline}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-neutral-700 dark:text-neutral-300">
+          <span className="inline-flex items-center gap-2"><MapPin className="w-4 h-4"/> {INFO.location}</span>
+          <a className="inline-flex items-center gap-2 underline" href={`mailto:${INFO.email}`}><Mail className="w-4 h-4"/> {INFO.email}</a>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3 text-sm text-neutral-600 dark:text-neutral-300">
-          <span className="inline-flex items-center gap-2"><Globe className="w-4 h-4"/> {INFO.location}</span>
-          <span className="inline-flex items-center gap-2"><Phone className="w-4 h-4"/> {INFO.phone}</span>
-          <span className="inline-flex items-center gap-2"><Mail className="w-4 h-4"/> {INFO.email}</span>
-        </div>
-      </div>
-      <div className="relative">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="rounded-3xl p-8 border border-neutral-200 dark:border-neutral-800 shadow-sm bg-gradient-to-br from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950"
-        >
-          <div className="grid grid-cols-3 gap-3">
-            {["Next.js", "FastAPI", "Rust", "AWS", "Docker", "Postgres", "SwiftUI", "HPC", "FPGA"].map((t) => (
-              <Badge key={t} variant="secondary" className="justify-center py-2 text-xs rounded-xl">{t}</Badge>
-            ))}
-          </div>
-          <Separator className="my-6" />
-          <div className="flex items-center gap-3">
-            <Code2 className="w-5 h-5"/>
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">
-              Shipping maintainable code, clear docs, and thoughtful UX.
-            </p>
-          </div>
-        </motion.div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   </section>
 );
 
-// -------------------------
-// PROJECTS
-// -------------------------
+// About Me
+const About: React.FC = () => (
+  <Section id="about" title="About me" icon={<Sparkles className="w-6 h-6"/>}>
+    <Card className="rounded-2xl">
+      <CardContent className="p-6 text-neutral-800 dark:text-neutral-200">
+        <p>
+          I am an international development leader making active contributions by
+          building bridges between governments, businesses, and communities
+          through sustainable partnerships. My work is driven by a vision of
+          borderless, shared prosperity for all.
+        </p>
+      </CardContent>
+    </Card>
+  </Section>
+);
+
+// Professional Development
+const Professional: React.FC = () => (
+  <Section id="professional" title="Professional development" icon={<Briefcase className="w-6 h-6"/>}>
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle>Connector & Strategist</CardTitle>
+          <CardDescription>Governments • Businesses • Communities</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p>
+            I facilitate high‑trust partnerships and design scalable, sustainable
+            programmes that improve livelihoods and unlock shared value.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {["Partnerships", "Strategy", "Programme Design", "Impact"].map((t)=> (
+              <Badge key={t} variant="secondary" className="rounded-xl">{t}</Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle>Focus</CardTitle>
+          <CardDescription>Sustainable Development • Agriculture • Communities</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="list-disc pl-5 space-y-2 text-sm">
+            <li>Co‑creating interventions with local stakeholders.</li>
+            <li>Scaling pilots to policy and regional implementation.</li>
+            <li>Embedding monitoring, learning & evaluation.</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  </Section>
+);
+
+// Reflections + Input from people (reviews)
+const Reflections: React.FC = () => (
+  <Section id="reflections" title="Reflections" icon={<Quote className="w-6 h-6"/>}>
+    <div className="space-y-6">
+      <Card className="rounded-2xl">
+        <CardContent className="p-6">
+          <p className="text-neutral-800 dark:text-neutral-200">
+            Learning travels both ways. Reflections here capture lessons from
+            field practice, cross‑sector collaboration, and the quiet craft of
+            sustaining partnerships over time.
+          </p>
+        </CardContent>
+      </Card>
+      <ReviewsBlock />
+    </div>
+  </Section>
+);
+
+// Projects
 const Projects: React.FC = () => (
   <Section id="projects" title="Projects" icon={<Briefcase className="w-6 h-6"/>}>
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {PROJECTS.map((p) => (
         <Card key={p.title} className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-2">
-              {p.title}
-              <div className="flex items-center gap-2">
-                <a href={p.repo} target="_blank" rel="noreferrer" className="inline-flex"><Github className="w-4 h-4"/></a>
-                <a href={p.link} target="_blank" rel="noreferrer" className="inline-flex"><ExternalLink className="w-4 h-4"/></a>
-              </div>
-            </CardTitle>
-            <CardDescription>{p.blurb}</CardDescription>
+            <CardTitle>{p.title}</CardTitle>
+            <CardDescription>{p.tags.join(" • ")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {p.tags.map((t) => (
-                <Badge key={t} variant="outline" className="rounded-xl">{t}</Badge>
-              ))}
-            </div>
+            <p className="text-sm text-neutral-800 dark:text-neutral-200">{p.summary}</p>
           </CardContent>
         </Card>
       ))}
@@ -218,121 +280,40 @@ const Projects: React.FC = () => (
   </Section>
 );
 
-// -------------------------
-// EXPERIENCE
-// -------------------------
-const Experience: React.FC = () => (
-  <Section id="experience" title="Experience" icon={<Briefcase className="w-6 h-6"/>}>
-    <div className="space-y-4">
-      {EXPERIENCE.map((e) => (
-        <Card key={e.company} className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-xl">{e.role}</CardTitle>
-            <CardDescription className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{e.company}</span>
-              <span className="text-neutral-400">•</span>
-              <span>{e.period}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-5 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-              {e.points.map((pt, i) => (
-                <li key={i}>{pt}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  </Section>
-);
-
-// -------------------------
-// SKILLS
-// -------------------------
-const Skills: React.FC = () => (
-  <Section id="skills" title="Skills" icon={<Rocket className="w-6 h-6"/>}>
-    <div className="flex flex-wrap gap-2">
-      {SKILLS.map((s) => (
-        <Badge key={s} variant="secondary" className="rounded-xl py-2 px-3 text-sm">{s}</Badge>
-      ))}
-    </div>
-  </Section>
-);
-
-// -------------------------
-// CONTACT
-// -------------------------
+// Contact
 const Contact: React.FC = () => (
   <Section id="contact" title="Contact" icon={<Mail className="w-6 h-6"/>}>
     <Card className="rounded-2xl">
       <CardContent className="p-6">
-        <p className="text-neutral-700 dark:text-neutral-300 mb-6">
-          Want to collaborate, have a role in mind, or just say hi? Drop a note below
-          or email me at <a className="underline" href={`mailto:${INFO.email}`}>{INFO.email}</a>.
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget as HTMLFormElement);
-            const payload = Object.fromEntries(data.entries());
-            console.log("Contact form submitted", payload);
-            alert("Thanks! Your message was captured locally. Hook this up to your backend/email.");
-          }}
-          className="grid md:grid-cols-2 gap-4"
-        >
-          <Input name="name" placeholder="Your name" required className="rounded-xl"/>
-          <Input name="email" type="email" placeholder="Email" required className="rounded-xl"/>
-          <div className="md:col-span-2">
-            <Textarea name="message" placeholder="Message" rows={5} required className="rounded-xl"/>
-          </div>
-          <div className="md:col-span-2 flex justify-end">
-            <Button type="submit" className="rounded-2xl">Send <ArrowRight className="w-4 h-4 ml-2"/></Button>
-          </div>
-        </form>
+        <p className="mb-4">No phone listed. Please reach out via email:</p>
+        <a className="inline-flex items-center gap-2 underline text-lg" href={`mailto:${INFO.email}`}>
+          <Mail className="w-5 h-5"/> {INFO.email}
+        </a>
       </CardContent>
     </Card>
   </Section>
 );
 
-// -------------------------
-// FOOTER
-// -------------------------
 const Footer: React.FC = () => (
   <footer className="py-10 border-t border-neutral-200 dark:border-neutral-800">
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-sm text-neutral-500 flex flex-col md:flex-row items-center justify-between gap-3">
       <p>© {new Date().getFullYear()} {INFO.name}. All rights reserved.</p>
-      <div className="flex items-center gap-3">
-        <a href={INFO.socials.github} target="_blank" rel="noreferrer" className="inline-flex"><Github className="w-4 h-4"/></a>
-        <a href={INFO.socials.linkedin} target="_blank" rel="noreferrer" className="inline-flex"><Linkedin className="w-4 h-4"/></a>
-        <a href={`mailto:${INFO.email}`} className="inline-flex"><Mail className="w-4 h-4"/></a>
-      </div>
+      <a className="underline" href={`mailto:${INFO.email}`}>{INFO.email}</a>
     </div>
   </footer>
 );
 
-// -------------------------
-// ROOT COMPONENT
-// -------------------------
-export default function Portfolio() {
+export default function Page() {
   return (
     <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
       <Navbar />
       <Hero />
+      <About />
+      <Professional />
+      <Reflections />
       <Projects />
-      <Experience />
-      <Skills />
       <Contact />
       <Footer />
     </div>
   );
 }
-
-// ---------------------------------------------
-// QUICK START NOTES
-// 1) Update INFO, PROJECTS, EXPERIENCE, SKILLS above.
-// 2) Wire the contact form to your backend/email provider.
-// 3) Add /public/resume.pdf or update INFO.resumeUrl.
-// 4) Optional: convert this to Next.js page (app/page.tsx) or React SPA.
-// 5) Tailwind utility classes + shadcn/ui ensure a clean, modern aesthetic.
-// ---------------------------------------------
